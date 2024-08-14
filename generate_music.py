@@ -134,45 +134,45 @@ def predict_next_note(
 if __name__ == '__main__':
     # Download and extract the MAESTRO dataset
     data_dir = 'data/maestro-v2.0.0'
-    # maestro_url = 'https://storage.googleapis.com/magentadata/datasets/maestro/v2.0.0/maestro-v2.0.0-midi.zip'
-    # download_and_extract_maestro(data_dir, maestro_url)
+    maestro_url = 'https://storage.googleapis.com/magentadata/datasets/maestro/v2.0.0/maestro-v2.0.0-midi.zip'
+    download_and_extract_maestro(data_dir, maestro_url)
+
+    # Initialize the dataset
+    music_dataset = MusicDataset(data_dir=data_dir, num_files=100)
+    notes_tensor = music_dataset.get_notes_tensor()
+
+    # Create the sequence dataset
+    seq_length = 25
+    seq_ds = SequenceDataset(notes_tensor, seq_length=seq_length)
+
+    # Initialize the data loader with multiprocessing support
+    music_data_loader = MusicDataLoader(seq_ds, batch_size=64, num_workers=8)
+    train_loader = music_data_loader.get_data_loader()
+    input_shape = (seq_length, 3)  # Adjust according to your data
+
+    model = MusicModel(input_shape)
+
+    # Initialize the trainer
+    trainer = Trainer(model, train_loader, learning_rate=0.005)
+
+    # Define callbacks
+    callbacks = [EarlyStoppingAndCheckpoint(filepath='./training_checkpoints/model_checkpoint.pth')]
+
+    # Train the model
+    history = trainer.train(epochs=50, callbacks=callbacks)
+
+    # Plot training loss
+    plt.plot(range(len(history['loss'])), history['loss'], label='total loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Training Loss Over Epochs')
+    plt.legend()
+    plt.show()
+
+    # # Evaluate the model
+    losses = trainer.evaluate()
+    print(f"Evaluation losses: {losses}")
     #
-    # # Initialize the dataset
-    # music_dataset = MusicDataset(data_dir=data_dir, num_files=100)
-    # notes_tensor = music_dataset.get_notes_tensor()
-    #
-    # # Create the sequence dataset
-    # seq_length = 25
-    # seq_ds = SequenceDataset(notes_tensor, seq_length=seq_length)
-    #
-    # # Initialize the data loader with multiprocessing support
-    # music_data_loader = MusicDataLoader(seq_ds, batch_size=64, num_workers=8)
-    # train_loader = music_data_loader.get_data_loader()
-    # input_shape = (seq_length, 3)  # Adjust according to your data
-    #
-    # model = MusicModel(input_shape)
-    #
-    # # Initialize the trainer
-    # trainer = Trainer(model, train_loader, learning_rate=0.005)
-    #
-    # # Define callbacks
-    # callbacks = [EarlyStoppingAndCheckpoint(filepath='./training_checkpoints/model_checkpoint.pth')]
-    #
-    # # Train the model
-    # history = trainer.train(epochs=50, callbacks=callbacks)
-    #
-    # # Plot training loss
-    # plt.plot(range(len(history['loss'])), history['loss'], label='total loss')
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Loss')
-    # plt.title('Training Loss Over Epochs')
-    # plt.legend()
-    # plt.show()
-    #
-    # # # Evaluate the model
-    # losses = trainer.evaluate()
-    # print(f"Evaluation losses: {losses}")
-    # #
     filenames = glob.glob(str(pathlib.Path(data_dir) / '**/*.mid*'))
     print('Number of files:', len(filenames))
     sample_file = filenames[1]
