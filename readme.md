@@ -1,5 +1,3 @@
-Here’s an extensive and well-structured README in Markdown format for your project:
-
 ---
 
 # Music Generation with LSTM in PyTorch
