@@ -7,16 +7,17 @@ from trainer.trainer import Trainer
 
 
 class MusicModel(nn.Module):
-    def __init__(self, input_shape, lstm_units=128):
+    def __init__(self, input_shape, lstm_units=128,  dropout_rate=0.3):
         super(MusicModel, self).__init__()
         self.lstm = nn.LSTM(input_shape[1], lstm_units, batch_first=True)
+        self.dropout = nn.Dropout(dropout_rate)
         self.pitch = nn.Linear(lstm_units, 128)
         self.step = nn.Linear(lstm_units, 1)
         self.duration = nn.Linear(lstm_units, 1)
 
     def forward(self, x):
-        lstm_out, _ = self.lstm(x)
-        x = lstm_out[:, -1, :]  # Use the last output of the LSTM
+        x, _ = self.lstm(x)
+        x = self.dropout(x)
         pitch = self.pitch(x)
         step = self.step(x)
         duration = self.duration(x)
@@ -28,7 +29,6 @@ if __name__ == '__main__':
 
     # Convert the notes to a PyTorch tensor
     notes_tensor = music_dataset.get_notes_tensor()
-    print(notes_tensor[0].shape)
 
     # Use the notes_tensor to create a SequenceDataset, similar to TensorFlow's create_sequences
     seq_length = 25
@@ -40,4 +40,3 @@ if __name__ == '__main__':
     input_shape = (seq_length, 3)
     model = MusicModel(input_shape)
     trainer = Trainer(model, train_loader, learning_rate=0.005)
-    print(trainer.evaluate())
